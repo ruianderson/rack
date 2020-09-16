@@ -278,11 +278,25 @@ module Rack
         secure = "; secure"  if value[:secure]
         httponly = "; HttpOnly" if value[:httponly]
         value = value[:value]
+        same_site =
+          case value[:same_site]
+          when false, nil
+            nil
+          when :none, 'None', :None
+            '; SameSite=None'
+          when :lax, 'Lax', :Lax
+            '; SameSite=Lax'
+          when true, :strict, 'Strict', :Strict
+            '; SameSite=Strict'
+          else
+            raise ArgumentError, "Invalid SameSite value: #{value[:same_site].inspect}"
+          end
+      end
       end
       value = [value] unless Array === value
       cookie = escape(key) + "=" +
         value.map { |v| escape v }.join("&") +
-        "#{domain}#{path}#{max_age}#{expires}#{secure}#{httponly}"
+        "#{domain}#{path}#{max_age}#{expires}#{secure}#{httponly}#{same_site}"
 
       case header["Set-Cookie"]
       when nil, ''
